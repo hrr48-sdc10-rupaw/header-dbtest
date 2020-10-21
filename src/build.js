@@ -22,7 +22,8 @@ const templates = [
   '% Fox 64'
 ];
 
-const names = fill.map(t => templates.map(x => x.split('%').join(t))).flat();
+const names = fill.map(t => templates.map(x => x.split('%').join(t)))
+  .reduce((a, b) => a.concat(b));
 
 const descs = [
   "You are dead. Not beeg souprise.",
