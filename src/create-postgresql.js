@@ -1,5 +1,4 @@
 const pg = require('pg');
-const pg = require('pg-promise');
 const db = require('./config.js');
 const build = require('./build.js');
 
