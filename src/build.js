@@ -12,7 +12,7 @@ const studios = [
   'Vladimir Putin'
 ];
 
-const names = [
+const templates = [
   "% Hard 2: % Harder",
   '%!',
   '%Craft',
@@ -21,6 +21,8 @@ const names = [
   'Maximum %',
   '% Fox 64'
 ];
+
+const names = fill.map(t => templates.map(x => x.split('%').join(t))).flat();
 
 const descs = [
   "You are dead. Not beeg souprise.",
@@ -46,19 +48,18 @@ const BATCH_SIZE = 10000;
 module.exports.makestores = function() {
   const aiget = a => Math.floor(Math.random() * a.length);
   const out = fs.openSync('store_meta', 'w');
-  const buf = Buffer.alloc(BATCH_SIZE* 3 * 5);
+  const buf = Buffer.alloc(BATCH_SIZE * 3 * 5);
   var b = 0;
   while (b < 10000000) {
     for (let i = 0; i < BATCH_SIZE; i++) {
-      const off = i * 5;
+      const off = i * 4;
       buf.writeUInt8(aiget(names), off);
-      buf.writeUInt8(aiget(fill), off + 1)
-      buf.writeUInt8(aiget(descs), off + 2);
+      buf.writeUInt8(aiget(descs), off + 1);
+      buf.writeUInt8(aiget(studios), off + 2);
       buf.writeUInt8(aiget(studios), off + 3);
-      buf.writeUInt8(aiget(studios), off + 4);
       b++;
     }
-    fs.writeSync(out, buf, 0, BATCH_SIZE * 5);
+    fs.writeSync(out, buf, 0, BATCH_SIZE * 4);
   }
   fs.closeSync(out);
 
@@ -93,7 +94,7 @@ module.exports.getstore = function() {
   var i = 0;
   var off = 0;
   var open = true;
-  const buf = Buffer.alloc(BATCH_SIZE * 5);
+  const buf = Buffer.alloc(BATCH_SIZE * 4);
   return function() {
     if (i >= 10000000) {
       if (open) {
@@ -103,21 +104,15 @@ module.exports.getstore = function() {
       }
       return null;
     } else if (i % BATCH_SIZE === 0) {
-      fs.readSync(file, buf, 0, 100000 * 5);
+      fs.readSync(file, buf, 0, BATCH_SIZE * 4);
       off = 0;
     }
     const name = names[buf.readUInt8(off)];
-    const param = fill[buf.readUInt8(off + 1)];
-    const desc = descs[buf.readUInt8(off + 2)];
-    const pub = studios[buf.readUInt8(off + 3)];
-    const dev = studios[buf.readUInt8(off + 4)];
-    off += 5;
+    const desc = descs[buf.readUInt8(off + 1)];
+    const pub = studios[buf.readUInt8(off + 2)];
+    const dev = studios[buf.readUInt8(off + 3)];
+    off += 4;
     i++;
-    return new StoreEntry(
-      name.split('%').join(param),
-      desc,
-      pub,
-      dev
-    );
+    return new StoreEntry(name, desc, pub, dev);
   }
 }

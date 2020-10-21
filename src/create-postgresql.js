@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS media (
     if(ops.length >= 10000) {
       await Promise.all(ops);
       ops = [];
-      console.log(`${i} done`);
     }
     x = next();
   }
