@@ -81,39 +81,34 @@ module.exports.makestores = function() {
   fs.closeSync(out_img);
 }
 
-const StoreEntry = class {
-  constructor(name, blurb, pub, dev) {
-    this.name = name;
-    this.blurb = blurb;
-    this.pub = pub;
-    this.dev = dev;
-  }
-};
-
 module.exports.getstore = function() {
   const file = fs.openSync('store_meta', 'r');
   var i = 0;
-  var off = 0;
   var open = true;
-  const buf = Buffer.alloc(BATCH_SIZE * 4);
+  var buf = Buffer.alloc(BATCH_SIZE * 4);
   return function() {
-    if (i >= 10000000) {
-      if (open) {
-        open = false;
-        fs.closeSync(file);
-        buf = null;
+    return new Promise((yes, no) => {
+      if (i >= 10000000) {
+        if (open) {
+          open = false;
+          fs.closeSync(file);
+          buf = null;
+        }
+        return yes(null);
       }
-      return null;
-    } else if (i % BATCH_SIZE === 0) {
+      const data = [];
       fs.readSync(file, buf, 0, BATCH_SIZE * 4);
-      off = 0;
-    }
-    const name = names[buf.readUInt8(off)];
-    const desc = descs[buf.readUInt8(off + 1)];
-    const pub = studios[buf.readUInt8(off + 2)];
-    const dev = studios[buf.readUInt8(off + 3)];
-    off += 4;
-    i++;
-    return new StoreEntry(name, desc, pub, dev);
+      var off = 0;
+      for (let x = 0; x < BATCH_SIZE && i <= 10000000; x++) {
+        const name = names[buf.readUInt8(off)];
+        const desc = descs[buf.readUInt8(off + 1)];
+        const pub = studios[buf.readUInt8(off + 2)];
+        const dev = studios[buf.readUInt8(off + 3)];
+        off += 4;
+        i++;
+        data.push({id: i, name: name, blurb: desc, publisher: pub, developer: dev });
+      }
+      return yes(data);
+    });
   }
 }

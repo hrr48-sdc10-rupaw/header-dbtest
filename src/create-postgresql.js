@@ -1,39 +1,44 @@
 const pg = require('pg');
+const pgp = require('pg-promise')({});
 const db = require('./config.js');
 const build = require('./build.js');
 
-const client = new pg.Client(db.PG_DB_INFO);
-client.connect()
-.then(() => client.query(`DROP TABLE IF EXISTS games;
+const tbl = new pgp.helpers.ColumnSet([
+  'id',
+  'name',
+  'blurb',
+  'publisher',
+  'developer'
+], {table: 'games'});
+
+const client = pgp(db.PG_DB_INFO);
+client.any(`DROP TABLE IF EXISTS games;
 DROP TABLE IF EXISTS media;
 CREATE TABLE IF NOT EXISTS games (
   id integer PRIMARY KEY,
   name text,
   blurb text,
-  pub text,
-  dev text
+  publisher text,
+  developer text
 );
 CREATE TABLE IF NOT EXISTS media (
   gid integer,
   url text
-)`))
-.then(async () => {
-  const start = Date.now();
+)`)
+.then(() => {
   const next = build.getstore();
-  var ops = [];
-  var x = next();
-  for (let i = 0; x; i++) {
-    ops.push(client.query(`INSERT INTO games(id, name, blurb, pub, dev) VALUES($1, $2, $3, $4, $5) RETURNING *;`,
-      [i, x.name, x.blurb, x.pub, x.dev]));
-    if(ops.length >= 10000) {
-      await Promise.all(ops);
-      ops = [];
-    }
-    x = next();
-  }
-  Promise.all(ops).then(() => console.log(Date.now() - start));
+  var i = 0
+  return client.tx('massive-insert', t => {
+    const push = data => {if (data) {
+      console.log(`Batch ${i++} done`)
+      return t.none(pgp.helpers.insert(data, tbl));
+    }}
+    return t.sequence(_ => next().then(push).catch(why => console.log(why)));
+  });
 })
-.then(() => client.end())
+.then(data => console.log(data))
+//.then(data => console.log(`batches: ${data.total}, time: ${data.duration}`))
+//.then(() => client.end())
 .catch(why => {
   console.log(why);
   client.end();
