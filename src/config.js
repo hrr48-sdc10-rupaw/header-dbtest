@@ -3,7 +3,8 @@ const DB_INFO = {
   password: 'abc123',
   database: 'postgres',
   host: 'localhost',
-  port: 5432
+  port: 5432,
+  max: 10,
 };
 
 module.exports.PG_DB_INFO = DB_INFO;

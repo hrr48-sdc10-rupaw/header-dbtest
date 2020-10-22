@@ -105,8 +105,41 @@ module.exports.getstore = function() {
         const pub = studios[buf.readUInt8(off + 2)];
         const dev = studios[buf.readUInt8(off + 3)];
         off += 4;
-        i++;
         data.push({id: i, name: name, blurb: desc, publisher: pub, developer: dev });
+        i++;
+      }
+      return yes(data);
+    });
+  }
+}
+
+module.exports.getimgstore = function() {
+  const file = fs.openSync('store_img', 'r');
+  var i = 0;
+  var open = true;
+  var buf = Buffer.alloc(BATCH_SIZE * 3 * 5);
+  return function() {
+    return new Promise((yes, no) => {
+      if (i >= 10000000) {
+        if (open) {
+          open = false;
+          fs.closeSync(file);
+          buf = null;
+        }
+        return yes(null);
+      }
+      const data = [];
+      fs.readSync(file, buf, 0, BATCH_SIZE * 3 * 5);
+      var off = 0;
+      for (let x = 0; x < BATCH_SIZE && i <= 10000000; x++) {
+        const r = buf.readUInt8(off);
+        const g = buf.readUInt8(off + 1)
+        const b = buf.readUInt8(off + 2)
+        const col = (r << 16 | g << 8 | b).toString(16);
+        const id = Math.floor(i / 5);
+        off += 3;
+        data.push({gid: id, url: `https://via.placeholder.com/640x360/${col}`});
+        i++;
       }
       return yes(data);
     });
