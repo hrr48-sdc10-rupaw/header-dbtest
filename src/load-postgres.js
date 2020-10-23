@@ -1,9 +1,8 @@
-const pg = require('pg');
 const pgp = require('pg-promise')({});
 const db = require('./config.js');
 const build = require('./build.js');
 
-const tbl = new pgp.helpers.ColumnSet([
+const tbmeta = new pgp.helpers.ColumnSet([
   'id',
   'name',
   'blurb',
@@ -11,16 +10,14 @@ const tbl = new pgp.helpers.ColumnSet([
   'developer'
 ], {table: 'games'});
 
-const itb = new pgp.helpers.ColumnSet([
+const tbmedia = new pgp.helpers.ColumnSet([
   'gid',
   'url'
 ], {table: 'media'});
 
-const pushbulk = function(name, next, table) {
-  var i = 0;
+const pushbulk = function(next, table) {
   return client.tx('massive-insert', t => {
-    const push = data => {if (data) {
-      console.log(`${name}: Batch ${++i}/1000 done`)
+    const push = data => {if (data) { //this doesn't work as a ternary for some reason
       return t.none(pgp.helpers.insert(data, table));
     }}
     return t.sequence(_ => next().then(push).catch(why => console.log(why)));
@@ -48,6 +45,6 @@ ON games (id);
 CREATE INDEX idx_media
 ON media (gid);`
 )
-.then(() => pushbulk('meta', build.getstore(), tbl))
-.then(() => pushbulk('images', build.getimgstore(), itb))
+.then(() => pushbulk(build.getstore(), tbmeta))
+.then(() => pushbulk(build.getimgstore(), tbmedia))
 .catch(why => console.log(why));
