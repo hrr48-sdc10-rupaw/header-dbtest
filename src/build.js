@@ -33,17 +33,6 @@ const descs = [
   "What's Obama's last name?"
 ];
 
-
-
-/*
-const seed = 328490;
-const rand = mulberry32(seed);
-const randi = n => Math.floor(rand() * n);
-const randa = a => a[randi(a.length)];
-const makename = () => randa(names).split('%').join(randa(fill));
-const makeimg = () => 'https://via.placeholder.com/640x360/' + randi(2147483647).toString().padStart(6, '0');
-*/
-
 const BATCH_SIZE = 10000;
 
 module.exports.makestores = function() {
@@ -66,20 +55,18 @@ module.exports.makestores = function() {
 
   const out_img = fs.openSync('store_img', 'w');
   var b = 0;
-  while (b < 10000000) {
+  while (b < 10000000 * 5) {
     for (let i = 0; i < BATCH_SIZE; i++) {
-      for (let x = 0; x < 5; x++) {
-        const off = (i + x) * 3;
-        buf.writeUInt8(Math.floor(Math.random() * 256), off);
-        buf.writeUInt8(Math.floor(Math.random() * 256), off + 1);
-        buf.writeUInt8(Math.floor(Math.random() * 256), off + 2);
-      }
+      const off = i * 3;
+      buf.writeUInt8(Math.floor(Math.random() * 256), off);
+      buf.writeUInt8(Math.floor(Math.random() * 256), off + 1);
+      buf.writeUInt8(Math.floor(Math.random() * 256), off + 2);
       b++;
     }
     fs.writeSync(out_img, buf, 0, BATCH_SIZE * 3 * 5);
   }
   fs.closeSync(out_img);
-}
+};
 
 module.exports.getstore = function() {
   const file = fs.openSync('store_meta', 'r');
@@ -113,14 +100,15 @@ module.exports.getstore = function() {
   }
 }
 
+const RSIZE = 10000000 * 5;
 module.exports.getimgstore = function() {
   const file = fs.openSync('store_img', 'r');
   var i = 0;
   var open = true;
   var buf = Buffer.alloc(BATCH_SIZE * 3 * 5);
   return function() {
-    return new Promise((yes, no) => {
-      if (i >= 10000000) {
+    return new Promise((yes, _) => {
+      if (i >= RSIZE) {
         if (open) {
           open = false;
           fs.closeSync(file);
@@ -131,7 +119,7 @@ module.exports.getimgstore = function() {
       const data = [];
       fs.readSync(file, buf, 0, BATCH_SIZE * 3 * 5);
       var off = 0;
-      for (let x = 0; x < BATCH_SIZE && i <= 10000000; x++) {
+      for (let x = 0; x < BATCH_SIZE && i <= RSIZE; x++) {
         const r = buf.readUInt8(off);
         const g = buf.readUInt8(off + 1)
         const b = buf.readUInt8(off + 2)

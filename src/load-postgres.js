@@ -42,7 +42,11 @@ CREATE TABLE IF NOT EXISTS media (
   gid integer,
   CONSTRAINT fk_gid FOREIGN KEY(gid) REFERENCES games(id),
   url text
-)`
+);
+CREATE UNIQUE INDEX idx_games
+ON games (id);
+CREATE INDEX idx_media
+ON media (gid);`
 )
 .then(() => pushbulk('meta', build.getstore(), tbl))
 .then(() => pushbulk('images', build.getimgstore(), itb))
