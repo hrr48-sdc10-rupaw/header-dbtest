@@ -123,7 +123,7 @@ module.exports.getimgstore = function() {
         const r = buf.readUInt8(off);
         const g = buf.readUInt8(off + 1)
         const b = buf.readUInt8(off + 2)
-        const col = (r << 16 | g << 8 | b).toString(16);
+        const col = (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
         const id = Math.floor(i / 5);
         off += 3;
         data.push({gid: id, url: `https://via.placeholder.com/640x360/${col}`});

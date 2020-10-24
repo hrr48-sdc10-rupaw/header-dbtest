@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node src/time.js",
+    "test": "k6 run --vus 100 --duration 1m test.js",
     "build": "node -e \"require('./src/build.js').makestores()\"",
     "load-postgres": "node src/load-postgres.js"
   },
