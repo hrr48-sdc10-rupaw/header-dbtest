@@ -34,13 +34,15 @@ const descs = [
 ];
 
 const BATCH_SIZE = 10000;
+const IMG_SIZE = 15;
+const ENTRIES = 10000000;
 
 module.exports.makestores = function() {
   const aiget = a => Math.floor(Math.random() * a.length);
   const out = fs.openSync('store_meta', 'w');
-  const buf = Buffer.alloc(BATCH_SIZE * 3 * 5);
+  const buf = Buffer.alloc(BATCH_SIZE * IMG_SIZE);
   var b = 0;
-  while (b < 10000000) {
+  while (b < ENTRIES) {
     for (let i = 0; i < BATCH_SIZE; i++) {
       const off = i * 4;
       buf.writeUInt8(aiget(names), off);
@@ -55,12 +57,14 @@ module.exports.makestores = function() {
 
   const out_img = fs.openSync('store_img', 'w');
   var b = 0;
-  while (b < 10000000 * 5) {
+  while (b < ENTRIES) {
     for (let i = 0; i < BATCH_SIZE; i++) {
-      const off = i * 3;
-      buf.writeUInt8(Math.floor(Math.random() * 256), off);
-      buf.writeUInt8(Math.floor(Math.random() * 256), off + 1);
-      buf.writeUInt8(Math.floor(Math.random() * 256), off + 2);
+      for (let x = 0; x < 5; x++) {
+        const off = i * 3 * x;
+        buf.writeUInt8(Math.floor(Math.random() * 256), off);
+        buf.writeUInt8(Math.floor(Math.random() * 256), off + 1);
+        buf.writeUInt8(Math.floor(Math.random() * 256), off + 2);
+      }
       b++;
     }
     fs.writeSync(out_img, buf, 0, BATCH_SIZE * 3 * 5);
