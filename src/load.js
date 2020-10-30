@@ -7,7 +7,8 @@ const tbmeta = new pgp.helpers.ColumnSet([
   'name',
   'blurb',
   'publisher',
-  'developer'
+  'developer',
+  'tags'
 ], {table: 'games'});
 
 const tbmedia = new pgp.helpers.ColumnSet([
@@ -16,8 +17,10 @@ const tbmedia = new pgp.helpers.ColumnSet([
 ], {table: 'media'});
 
 const pushbulk = function(next, table) {
+  var i = 0;
   return client.tx('massive-insert', t => {
     const push = data => {if (data) { //this doesn't work as a ternary for some reason
+      console.log(`block ${++i}`)
       return t.none(pgp.helpers.insert(data, table));
     }}
     return t.sequence(_ => next().then(push).catch(why => console.log(why)));
@@ -33,7 +36,8 @@ CREATE TABLE IF NOT EXISTS games (
   name text,
   blurb text,
   publisher text,
-  developer text
+  developer text,
+  tags integer
 );
 CREATE TABLE IF NOT EXISTS media (
   gid integer,

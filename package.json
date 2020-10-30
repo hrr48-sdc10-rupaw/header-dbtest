@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "k6 run --vus 100 --duration 1m test.js",
+    "test": "k6 run test.js",
     "build": "node -e \"require('./src/build.js').makestores()\"",
-    "load-postgres": "node src/load-postgres.js"
+    "load": "node src/load.js"
   },
   "keywords": [],
   "author": "",
