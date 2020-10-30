@@ -1,9 +1,20 @@
 import http from 'k6/http';
-import k6 from 'k6';
 
-const url = 'http://localhost:3001/api/hero/all_info/';
+const url = undefined;
+
+export let options = {
+  scenarios: {
+    c100: {
+      executor: 'constant-arrival-rate',
+      rate: 150,
+      timeUnit: '1s',
+      duration: '1m',
+      preAllocatedVUs: 100,
+      maxVUs: 1200,
+    }
+  },
+};
 
 export default function() {
-  http.get(url + Math.floor(Math.random() * 10000000));
-  k6.sleep(1);
+  http.get(`${url}/api/hero/all_info/${Math.floor(Math.random() * 10000000)}`);
 };
