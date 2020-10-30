@@ -14,12 +14,13 @@ const studios = [
 
 const templates = [
   "% Hard 2: % Harder",
-  '%!',
+  '% Legacy',
   '%Craft',
   '% Eternal',
   '% Payne',
   'Maximum %',
-  '% Fox 64'
+  '% Fox 64',
+  '% From Outer Space'
 ];
 
 const names = fill.map(t => templates.map(x => x.split('%').join(t)))
@@ -34,6 +35,7 @@ const descs = [
 ];
 
 const BATCH_SIZE = 10000;
+const META_SIZE = 8;
 const IMG_SIZE = 15;
 const ENTRIES = 10000000;
 
@@ -44,14 +46,15 @@ module.exports.makestores = function() {
   var b = 0;
   while (b < ENTRIES) {
     for (let i = 0; i < BATCH_SIZE; i++) {
-      const off = i * 4;
+      const off = i * 8;
       buf.writeUInt8(aiget(names), off);
       buf.writeUInt8(aiget(descs), off + 1);
       buf.writeUInt8(aiget(studios), off + 2);
       buf.writeUInt8(aiget(studios), off + 3);
+      buf.writeUInt32LE(Math.floor(Math.random() * 0xFFFFFFFF), off + 4);
       b++;
     }
-    fs.writeSync(out, buf, 0, BATCH_SIZE * 4);
+    fs.writeSync(out, buf, 0, BATCH_SIZE * META_SIZE);
   }
   fs.closeSync(out);
 
@@ -67,7 +70,7 @@ module.exports.makestores = function() {
       }
       b++;
     }
-    fs.writeSync(out_img, buf, 0, BATCH_SIZE * 3 * 5);
+    fs.writeSync(out_img, buf, 0, BATCH_SIZE * IMG_SIZE);
   }
   fs.closeSync(out_img);
 };
@@ -76,10 +79,10 @@ module.exports.getstore = function() {
   const file = fs.openSync('store_meta', 'r');
   var i = 0;
   var open = true;
-  var buf = Buffer.alloc(BATCH_SIZE * 4);
+  var buf = Buffer.alloc(BATCH_SIZE * META_SIZE);
   return function() {
     return new Promise((yes, no) => {
-      if (i >= 10000000) {
+      if (i >= ENTRIES) {
         if (open) {
           open = false;
           fs.closeSync(file);
@@ -88,15 +91,23 @@ module.exports.getstore = function() {
         return yes(null);
       }
       const data = [];
-      fs.readSync(file, buf, 0, BATCH_SIZE * 4);
+      fs.readSync(file, buf, 0, BATCH_SIZE * META_SIZE);
       var off = 0;
-      for (let x = 0; x < BATCH_SIZE && i <= 10000000; x++) {
+      for (let x = 0; x < BATCH_SIZE && i < 10000000; x++) {
         const name = names[buf.readUInt8(off)];
         const desc = descs[buf.readUInt8(off + 1)];
         const pub = studios[buf.readUInt8(off + 2)];
         const dev = studios[buf.readUInt8(off + 3)];
-        off += 4;
-        data.push({id: i, name: name, blurb: desc, publisher: pub, developer: dev });
+        const tag = buf.readInt32LE(off + 4);
+        off += META_SIZE;
+        data.push({
+          id: i,
+          name: name,
+          blurb: desc,
+          publisher: pub,
+          developer: dev,
+          tags: tag
+        });
         i++;
       }
       return yes(data);
@@ -109,7 +120,7 @@ module.exports.getimgstore = function() {
   const file = fs.openSync('store_img', 'r');
   var i = 0;
   var open = true;
-  var buf = Buffer.alloc(BATCH_SIZE * 3 * 5);
+  var buf = Buffer.alloc(BATCH_SIZE * IMG_SIZE);
   return function() {
     return new Promise((yes, _) => {
       if (i >= RSIZE) {
@@ -121,7 +132,7 @@ module.exports.getimgstore = function() {
         return yes(null);
       }
       const data = [];
-      fs.readSync(file, buf, 0, BATCH_SIZE * 3 * 5);
+      fs.readSync(file, buf, 0, BATCH_SIZE * IMG_SIZE);
       var off = 0;
       for (let x = 0; x < BATCH_SIZE && i <= RSIZE; x++) {
         const r = buf.readUInt8(off);
